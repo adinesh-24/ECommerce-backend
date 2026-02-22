@@ -39,6 +39,15 @@ app.use("/api/", require("./routes/userRoutes"));
 
 app.use("/mailer", require("./routes/mailerRoutes"));
 
+// Global error handler — must be BEFORE app.listen()
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Server Error"
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -47,13 +56,3 @@ app.listen(PORT, () => {
 
 //global error handling middleware
 // Global error handler
-app.use((err, req, res, next) => {
-
-  console.error(err);
-
-  res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || "Server Error"
-  });
-
-});

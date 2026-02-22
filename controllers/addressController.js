@@ -1,5 +1,5 @@
 const Address = require("../models/Address");
-const AppError = require("../utils/appError");
+const AppError = require("../utils/AppError");
 
 
 // ✅ Add new address

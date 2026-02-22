@@ -4,7 +4,7 @@ const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const AppError = require("../utils/appError");
+const AppError = require("../utils/AppError");
 
 
 // ===== Nodemailer transporter =====

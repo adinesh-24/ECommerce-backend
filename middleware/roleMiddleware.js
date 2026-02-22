@@ -1,5 +1,5 @@
 // Export a function that accepts allowed roles (admin, user, etc.)
-const AppError = require('../utils/appError');
+const AppError = require('../utils/AppError');
 module.exports = (...roles) => {
 
   // Return the actual middleware function

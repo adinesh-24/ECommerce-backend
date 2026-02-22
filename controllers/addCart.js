@@ -1,8 +1,8 @@
 // const { get } = require("../config/mail.config");
 const Cart = require("../models/Cart");
-const AppError = require("../utils/appError");
+const AppError = require("../utils/AppError");
 
-const addToCart = async (req, res,next) => {
+const addToCart = async (req, res, next) => {
 
   try {
 
@@ -102,4 +102,4 @@ const deleteCartItem = async (req, res) => {
 
 };
 
-module.exports = {addToCart, updateCart, deleteCartItem};
+module.exports = { addToCart, updateCart, deleteCartItem };

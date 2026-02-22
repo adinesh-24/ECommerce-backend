@@ -1,5 +1,5 @@
 const Product = require("../models/Product");
-const AppError = require('../utils/appError');
+const AppError = require('../utils/AppError');
 
 // GET /products?category=mobile&search=iphone
 // GET /products?category=mobile&search=iphone

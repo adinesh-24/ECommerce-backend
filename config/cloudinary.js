@@ -12,7 +12,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'product_uploads',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp'],
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp','avif'],
   },
 });
 

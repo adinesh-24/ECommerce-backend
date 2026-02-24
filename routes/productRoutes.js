@@ -27,10 +27,10 @@ router.delete("/cart/:id", verifyToken, deleteCartItem);
 router.post("/orders", verifyToken, createOrder);
 
 // ================= PRODUCTS =================
-router.get("/products", getProducts); // ✅ Fix for Cards.jsx
-router.get("/products/:id", getProductById); // ✅ Fix for EditProduct.jsx
+router.get("/products", getProducts); 
+router.get("/products/:id", getProductById); 
 router.get("/", getProducts);
-router.get("/:id", getProductById); // ✅ Fix for ViewProduct.jsx
+router.get("/:id", getProductById); 
 router.post("/addProducts", verifyToken, roles("admin"), upload.single("image"), createProduct);
 router.put("/updateProduct/:id", verifyToken, roles("admin"), upload.single("image"), updateProduct);
 router.delete("/deleteProduct/:id", verifyToken, roles("admin"), deleteProduct);

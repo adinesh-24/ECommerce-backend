@@ -22,7 +22,7 @@ exports.sendEmail = async (req, res, next) => {
     return res.status(200).json({ success: true, message: `Email sent successfully to ${message}  ` });
   } catch (error) {
     console.error('Error sending email:', error);
-    return new AppError('Failed to send email', 500);
+    return next(new AppError('Failed to send email', 500));
   }
 };
 

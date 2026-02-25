@@ -1,23 +1,10 @@
-const express = require("express");
 const User = require("../models/User");
 const Otp = require("../models/Otp");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
+const transporter = require("../config/mail.config");
 const AppError = require("../utils/AppError");
 
 
-// ===== Nodemailer transporter =====
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-
-// ===== Register =====
 const register = async (req, res, next) => {
   try {
     const { username, email, password, role } = req.body;
@@ -31,12 +18,11 @@ const register = async (req, res, next) => {
       return next(new AppError("User already exists", 400));
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // Manual hashing removed - handled by User model pre-save hook
     await User.create({
       username,
       email,
-      password: hashedPassword,
+      password,
       role: role || "user"
     });
 
@@ -53,7 +39,6 @@ const register = async (req, res, next) => {
 };
 
 
-// ===== Login =====
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -67,7 +52,8 @@ const login = async (req, res, next) => {
       return next(new AppError("Invalid credentials", 400));
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Use model instance method for password comparison
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return next(new AppError("Invalid credentials", 400));
     }
@@ -115,12 +101,14 @@ const forgotPassword = async (req, res, next) => {
     await Otp.create({ email, otp, expiresAt });
 
     // Send email
+    console.log(`Attempting to send OTP to ${email}...`);
     await transporter.sendMail({
       from: `"Support" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset OTP",
       text: `Your OTP for password reset is: ${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.`
     });
+    console.log(`OTP sent successfully to ${email}`);
 
     return res.status(200).json({
       message: "OTP sent to your email address"
@@ -166,7 +154,6 @@ const verifyOtp = async (req, res, next) => {
 };
 
 
-// ===== Reset Password - Step 3 =====
 const resetPassword = async (req, res, next) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -194,9 +181,14 @@ const resetPassword = async (req, res, next) => {
       return next(new AppError("OTP has expired. Please request a new one", 400));
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Find user and update password - will trigger pre-save hook
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new AppError("User not found", 404));
+    }
 
-    await User.findOneAndUpdate({ email }, { password: hashedPassword });
+    user.password = newPassword;
+    await user.save();
 
     // Remove OTP after successful reset
     await Otp.deleteMany({ email });

@@ -12,7 +12,7 @@ exports.sendEmail = async (req, res, next) => {
       return new AppError("Please enter all fields", 400);
     }
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: process.env.BREVO_SENDER,
       to,
       subject,
       text: message

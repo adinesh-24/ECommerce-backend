@@ -1,28 +1,22 @@
-const nodemailer = require("nodemailer");
+const transporter = require("../config/mail.config");
 
-// ── Transporter (Gmail + App Password) ──────────────────────
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
+// Removed local Gmail-specific transporter
+// Centralized transporter from mail.config.js is now used.
 
 // ── Send Order Confirmation ──────────────────────────────────
 const sendOrderConfirmation = async ({ toEmail, username, orderId, products, shippingAddress, paymentMethod, total }) => {
-    const productRows = products
-        .map(item => `
+  const productRows = products
+    .map(item => `
       <tr>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;">${item.productId?.title || "Product"}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;">${item.quantity}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right;">₹${(item.productId?.price || 0) * item.quantity}</td>
       </tr>`)
-        .join("");
+    .join("");
 
-    const paymentLabel = paymentMethod === "cod" ? "💵 Cash on Delivery" : "📲 UPI / Razorpay";
+  const paymentLabel = paymentMethod === "cod" ? "💵 Cash on Delivery" : "📲 UPI / Razorpay";
 
-    const html = `
+  const html = `
     <div style="font-family:Inter,sans-serif;max-width:560px;margin:auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
       <!-- Header -->
       <div style="background:linear-gradient(135deg,#6366f1,#818cf8);padding:32px 24px;text-align:center;">
@@ -86,12 +80,12 @@ const sendOrderConfirmation = async ({ toEmail, username, orderId, products, shi
     </div>
   `;
 
-    await transporter.sendMail({
-        from: `"E-Commerce Store" <${process.env.EMAIL_USER}>`,
-        to: toEmail,
-        subject: `🎉 Order Confirmed – #${orderId.toString().slice(-8).toUpperCase()}`,
-        html,
-    });
+  await transporter.sendMail({
+    from: `"E-Commerce Store" <${process.env.BREVO_SENDER}>`,
+    to: toEmail,
+    subject: `🎉 Order Confirmed – #${orderId.toString().slice(-8).toUpperCase()}`,
+    html,
+  });
 };
 
 module.exports = { sendOrderConfirmation };

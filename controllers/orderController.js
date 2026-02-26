@@ -55,6 +55,7 @@ exports.getUserOrders = async (req, res) => {
     const orders = await Order.find({
       userId: req.user.id
     })
+      .populate("userId", "username email")
       .populate("products.productId") // ⭐ show product details
       .sort({ createdAt: -1 });
 
@@ -74,7 +75,7 @@ exports.getAllOrders = async (req, res) => {
   try {
 
     const orders = await Order.find()
-      .populate("userId", "name email") // ⭐ user details only
+      .populate("userId", "username email") // ⭐ user details only
       .populate("products.productId")   // ⭐ product details
       .sort({ createdAt: -1 });
 
@@ -135,7 +136,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     // populate response
     const updatedOrder = await Order.findById(order._id)
-      .populate("userId", "name email")
+      .populate("userId", "username email")
       .populate("products.productId");
 
     res.json(updatedOrder);

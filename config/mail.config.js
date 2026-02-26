@@ -1,3 +1,4 @@
+const nodemailer = require("nodemailer");
 const dns = require("dns");
 
 // Force IPv4 as the default for all network calls to resolve ENETUNREACH on IPv6 addresses

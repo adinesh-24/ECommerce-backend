@@ -12,8 +12,9 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    rejectUnauthorized: false // Helps in some restricted environments
-  }
+    rejectUnauthorized: false
+  },
+  family: 4 // Force IPv4 to avoid ENETUNREACH on IPv6 addresses
 });
 
 // Verify connection configuration

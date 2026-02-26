@@ -1,27 +1,35 @@
-const nodemailer = require('nodemailer');
-const dotenv = require('dotenv');
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
-dotenv.config();
-
+// Create transporter
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
+  host: "smtp-relay.brevo.com",
   port: 587,
-  secure: false, // TLS is used with STARTTLS on port 587
+  secure: false, // STARTTLS (must be false for port 587)
+  
   auth: {
-    user: process.env.BREVO_SENDER,
-    pass: process.env.BREVO_API_KEY
+    user: process.env.BREVO_SENDER,     // SMTP Login (a36f2f001@smtp-brevo.com)
+    pass: process.env.BREVO_API_KEY     // SMTP KEY (xsmtpsib-xxxx)
   },
+
+  requireTLS: true,
+
+  // Important for Render / cloud environments
+  connectionTimeout: 60000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
+
   tls: {
     rejectUnauthorized: false
-  },
-  family: 4 // Force IPv4 for Render reliability
+  }
 });
 
+// Verify connection when server starts
 transporter.verify((error, success) => {
   if (error) {
-    console.error("SMTP server connection failed:", error.message);
+    console.error(" SMTP connection failed:", error);
   } else {
-    console.log("SMTP server ready (Brevo)");
+    console.log(" SMTP server ready (Brevo)");
   }
 });
 

@@ -1,12 +1,16 @@
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
+const dns = require('dns');
+
+// Force IPv4 as the default for all network calls to resolve ENETUNREACH on IPv6 addresses
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // Use SSL/TLS
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -14,7 +18,7 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false
   },
-  family: 4 // Force IPv4 to avoid ENETUNREACH on IPv6 addresses
+  family: 4 // Explicitly force IPv4
 });
 
 // Verify connection configuration

@@ -10,12 +10,12 @@ const register = async (req, res, next) => {
     const { username, email, password, role } = req.body;
 
     if (!username || !email || !password) {
-      return next(new AppError("Please enter all fields", 400));
+      throw new AppError("Please enter all fields", 400);
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return next(new AppError("User already exists", 400));
+      throw new AppError("User already exists", 400);
     }
 
     // Create user but unverified
@@ -56,9 +56,9 @@ const register = async (req, res, next) => {
 
   } catch (error) {
     if (error.code === 11000) {
-      return next(new AppError("User already exists", 400));
+      throw new AppError("User already exists", 400);
     }
-    return next(new AppError(error.message || "Server error", 500));
+    throw new AppError(error.message || "Server error", 500);
   }
 };
 
@@ -68,22 +68,22 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return next(new AppError("Please enter all fields", 400));
+      throw new AppError("Please enter all fields", 400);
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return next(new AppError("Invalid credentials", 400));
+      throw new AppError("Invalid credentials", 400);
     }
 
     // Use model instance method for password comparison
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return next(new AppError("Invalid credentials", 400));
+      throw new AppError("Invalid credentials", 400);
     }
 
     if (!user.isVerified) {
-      return next(new AppError("Please verify your account first", 401));
+      throw new AppError("Please verify your account first", 401);
     }
 
     const token = jwt.sign(
@@ -99,7 +99,7 @@ const login = async (req, res, next) => {
     });
 
   } catch (error) {
-    return next(new AppError(error.message || "Server error", 500));
+    throw new AppError(error.message || "Server error", 500);
   }
 };
 
@@ -110,12 +110,12 @@ const forgotPassword = async (req, res, next) => {
     const { email } = req.body;
 
     if (!email) {
-      return next(new AppError("Email is required", 400));
+      throw new AppError("Email is required", 400);
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return next(new AppError("No account found with this email", 404));
+      throw new AppError("No account found with this email", 404);
     }
 
     // Generate 6-digit OTP
@@ -143,7 +143,7 @@ const forgotPassword = async (req, res, next) => {
     });
 
   } catch (error) {
-    return next(new AppError(error.message || "Failed to send OTP", 500));
+    throw new AppError(error.message || "Failed to send OTP", 500);
   }
 };
 
@@ -154,22 +154,22 @@ const verifyOtp = async (req, res, next) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return next(new AppError("Email and OTP are required", 400));
+      throw new AppError("Email and OTP are required", 400);
     }
 
     const record = await Otp.findOne({ email });
 
     if (!record) {
-      return next(new AppError("OTP not found or already expired", 400));
+      throw new AppError("OTP not found or already expired", 400);
     }
 
     if (record.otp !== otp) {
-      return next(new AppError("Invalid OTP", 400));
+      throw new AppError("Invalid OTP", 400);
     }
 
     if (record.expiresAt < new Date()) {
       await Otp.deleteMany({ email });
-      return next(new AppError("OTP has expired. Please request a new one", 400));
+      throw new AppError("OTP has expired. Please request a new one", 400);
     }
 
     return res.status(200).json({
@@ -177,7 +177,7 @@ const verifyOtp = async (req, res, next) => {
     });
 
   } catch (error) {
-    return next(new AppError(error.message || "OTP verification failed", 500));
+    throw new AppError(error.message || "OTP verification failed", 500);
   }
 };
 
@@ -187,32 +187,32 @@ const resetPassword = async (req, res, next) => {
     const { email, otp, newPassword } = req.body;
 
     if (!email || !otp || !newPassword) {
-      return next(new AppError("Email, OTP and new password are required", 400));
+      throw new AppError("Email, OTP and new password are required", 400);
     }
 
     if (newPassword.length < 6) {
-      return next(new AppError("Password must be at least 6 characters", 400));
+      throw new AppError("Password must be at least 6 characters", 400);
     }
 
     const record = await Otp.findOne({ email });
 
     if (!record) {
-      return next(new AppError("OTP not found or already expired", 400));
+      throw new AppError("OTP not found or already expired", 400);
     }
 
     if (record.otp !== otp) {
-      return next(new AppError("Invalid OTP", 400));
+      throw new AppError("Invalid OTP", 400);
     }
 
     if (record.expiresAt < new Date()) {
       await Otp.deleteMany({ email });
-      return next(new AppError("OTP has expired. Please request a new one", 400));
+      throw new AppError("OTP has expired. Please request a new one", 400);
     }
 
     // Find user and update password - will trigger pre-save hook
     const user = await User.findOne({ email });
     if (!user) {
-      return next(new AppError("User not found", 404));
+      throw new AppError("User not found", 404);
     }
 
     user.password = newPassword;
@@ -227,7 +227,7 @@ const resetPassword = async (req, res, next) => {
     });
 
   } catch (error) {
-    return next(new AppError(error.message || "Password reset failed", 500));
+    throw new AppError(error.message || "Password reset failed", 500);
   }
 };
 
@@ -238,27 +238,27 @@ const verifyRegistration = async (req, res, next) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return next(new AppError("Email and OTP are required", 400));
+      throw new AppError("Email and OTP are required", 400);
     }
 
     const record = await Otp.findOne({ email });
 
     if (!record) {
-      return next(new AppError("OTP not found or already expired", 400));
+      throw new AppError("OTP not found or already expired", 400);
     }
 
     if (record.otp !== otp) {
-      return next(new AppError("Invalid OTP", 400));
+      throw new AppError("Invalid OTP", 400);
     }
 
     if (record.expiresAt < new Date()) {
       await Otp.deleteMany({ email });
-      return next(new AppError("OTP has expired. Please request a new one", 400));
+      throw new AppError("OTP has expired. Please request a new one", 400);
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return next(new AppError("User not found", 404));
+      throw new AppError("User not found", 404);
     }
 
     user.isVerified = true;
@@ -272,7 +272,7 @@ const verifyRegistration = async (req, res, next) => {
     });
 
   } catch (error) {
-    return next(new AppError(error.message || "OTP verification failed", 500));
+    throw new AppError(error.message || "OTP verification failed", 500);
   }
 };
 

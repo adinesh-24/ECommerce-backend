@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
   secure: false,    // STARTTLS
 
   auth: {
-    user: process.env.BREVO_SENDER,     // SMTP Login (a36f2f001@smtp-brevo.com)
+    user: process.env.BREVO_USER,     // SMTP Login (a36f2f001@smtp-brevo.com)
     pass: process.env.BREVO_API_KEY     // SMTP KEY (xsmtpsib-xxxx)
   },
 

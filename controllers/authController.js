@@ -24,7 +24,7 @@ const register = async (req, res, next) => {
       email,
       password,
       role: role || "user",
-      isVerified: false
+      isVerified: true
     });
 
     // Generate 6-digit OTP for initial verification
@@ -50,8 +50,8 @@ const register = async (req, res, next) => {
     }
 
     return res.status(201).json({
-      message: "User registered. Please verify your email with the OTP sent.",
-      email // Pass back email for the frontend to use in verification
+      message: "User registered successfully.",
+      email
     });
 
   } catch (error) {
@@ -82,9 +82,6 @@ const login = async (req, res, next) => {
       throw new AppError("Invalid credentials", 400);
     }
 
-    if (!user.isVerified) {
-      throw new AppError("Please verify your account first", 401);
-    }
 
     const token = jwt.sign(
       { id: user._id, role: user.role, username: user.username },

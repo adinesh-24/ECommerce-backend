@@ -18,16 +18,40 @@ const register = async (req, res, next) => {
       return next(new AppError("User already exists", 400));
     }
 
-    // Manual hashing removed - handled by User model pre-save hook
+    // Create user but unverified
     await User.create({
       username,
       email,
       password,
-      role: role || "user"
+      role: role || "user",
+      isVerified: false
     });
 
+    // Generate 6-digit OTP for initial verification
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await Otp.deleteMany({ email });
+    await Otp.create({ email, otp, expiresAt });
+
+    // Send email
+    console.log(`Attempting to send Registration OTP to ${email}...`);
+    try {
+      await transporter.sendMail({
+        from: `"Support" <${process.env.BREVO_SENDER}>`,
+        to: email,
+        subject: "Verify Your Account",
+        text: `Your OTP for account verification is: ${otp}\n\nThis OTP is valid for 10 minutes.`
+      });
+      console.log(`Registration OTP sent successfully to ${email}`);
+    } catch (mailError) {
+      console.error("Failed to send registration email:", mailError);
+      // We still created the user, they can retry verification later or use forgot password if needed
+    }
+
     return res.status(201).json({
-      message: "User registered successfully"
+      message: "User registered. Please verify your email with the OTP sent.",
+      email // Pass back email for the frontend to use in verification
     });
 
   } catch (error) {
@@ -56,6 +80,10 @@ const login = async (req, res, next) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return next(new AppError("Invalid credentials", 400));
+    }
+
+    if (!user.isVerified) {
+      return next(new AppError("Please verify your account first", 401));
     }
 
     const token = jwt.sign(
@@ -103,7 +131,7 @@ const forgotPassword = async (req, res, next) => {
     // Send email
     console.log(`Attempting to send OTP to ${email}...`);
     await transporter.sendMail({
-      from: `"Support" <${process.env.EMAIL_USER}>`,
+      from: `"Support" <${process.env.BREVO_SENDER}>`,
       to: email,
       subject: "Password Reset OTP",
       text: `Your OTP for password reset is: ${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.`
@@ -188,6 +216,7 @@ const resetPassword = async (req, res, next) => {
     }
 
     user.password = newPassword;
+    user.isVerified = true; // Also mark as verified if they reset password
     await user.save();
 
     // Remove OTP after successful reset
@@ -203,4 +232,49 @@ const resetPassword = async (req, res, next) => {
 };
 
 
-module.exports = { register, login, forgotPassword, verifyOtp, resetPassword };
+// ===== Verify Registration OTP [NEW] =====
+const verifyRegistration = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return next(new AppError("Email and OTP are required", 400));
+    }
+
+    const record = await Otp.findOne({ email });
+
+    if (!record) {
+      return next(new AppError("OTP not found or already expired", 400));
+    }
+
+    if (record.otp !== otp) {
+      return next(new AppError("Invalid OTP", 400));
+    }
+
+    if (record.expiresAt < new Date()) {
+      await Otp.deleteMany({ email });
+      return next(new AppError("OTP has expired. Please request a new one", 400));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new AppError("User not found", 404));
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    // Remove OTP after successful verification
+    await Otp.deleteMany({ email });
+
+    return res.status(200).json({
+      message: "Account verified successfully"
+    });
+
+  } catch (error) {
+    return next(new AppError(error.message || "OTP verification failed", 500));
+  }
+};
+
+
+module.exports = { register, login, forgotPassword, verifyOtp, resetPassword, verifyRegistration };

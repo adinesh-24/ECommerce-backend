@@ -4,24 +4,24 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com", // ⭐ explicit host
-  port: 587,              // ⭐ use 587 (more cloud-friendly)
-  secure: false,          // true only for 465
-  family: 4,              // force IPv4
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false, // TLS is used with STARTTLS on port 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.BREVO_SENDER,
+    pass: process.env.BREVO_API_KEY
   },
   tls: {
     rejectUnauthorized: false
-  }
+  },
+  family: 4 // Force IPv4 for Render reliability
 });
 
 transporter.verify((error, success) => {
   if (error) {
-    console.error("SMTP server connection failed:", error);
+    console.error("SMTP server connection failed:", error.message);
   } else {
-    console.log("SMTP server ready");
+    console.log("SMTP server ready (Brevo)");
   }
 });
 

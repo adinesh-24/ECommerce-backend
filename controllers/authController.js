@@ -49,8 +49,17 @@ const register = async (req, res, next) => {
       // We still created the user, they can retry verification later or use forgot password if needed
     }
 
+    // Generate token for auto-login
+    const token = jwt.sign(
+      { id: user._id, role: user.role, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
     return res.status(201).json({
       message: "User registered successfully.",
+      token,
+      role: user.role,
       email
     });
 

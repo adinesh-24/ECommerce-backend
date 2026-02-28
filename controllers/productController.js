@@ -5,11 +5,11 @@ const AppError = require('../utils/AppError');
 // GET /products?category=mobile&search=iphone
 exports.getProducts = async (req, res) => {
   try {
-    const { category, search } = req.query;
+    const { category, search, minPrice, maxPrice, sort } = req.query;
 
     let filter = {};
 
-    if (category) {
+    if (category && category !== "all") {
       filter.category = category;
     }
 
@@ -17,11 +17,20 @@ exports.getProducts = async (req, res) => {
       filter.title = { $regex: search, $options: "i" }; // Case insensitive search
     }
 
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
 
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    let sortOptions = { createdAt: -1 };
+    if (sort === "price_asc") sortOptions = { price: 1 };
+    if (sort === "price_desc") sortOptions = { price: -1 };
+
+    const products = await Product.find(filter).sort(sortOptions);
     res.json(products);
   } catch (error) {
-    return new AppError(error.message, 500);
+    return res.status(500).json({ message: error.message });
   }
 };
 
